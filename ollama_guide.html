@@ -8,14 +8,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* --- Global Styles & Reset --- */
+        /* --- Global Variables & Styling --- */
         :root {
-            --bg-color: #1c2130; /* Dark background */
-            --text-primary: #e4e6eb; /* Light text */
-            --accent-color: #1976d2; /* Primary Blue accent */
-            --secondary-accent: #4caf50; /* Green success/pro */
-            --warning-color: #ffc107; /* Yellow warning/con */
-            --card-bg: #28304a;
+            --bg-color: #151a20; /* Deep Midnight Charcoal */
+            --text-primary: #d4d9e0; /* Soft Off-White Text */
+            --accent-color: #2dd8dee; /* Electric Teal/Cyan Primary Accent */
+            --secondary-accent: #69f0ae; /* Mint Green Secondary Accent (Pros) */
+            --warning-color: #ffab00; /* Amber Orange Warning Accent (Cons) */
+            --card-bg: #242a36; /* Slate Gray Card Background */
             --font-family: 'Poppins', sans-serif;
         }
 
@@ -31,60 +31,62 @@
 
         /* --- Layout Utility Classes --- */
         section {
-            padding: 80px 5%; /* Sets consistent internal spacing for all sections */
-            margin-bottom: 40px; /* Adds a clean 40px gap *below* each section */
-        }
-
-        #evaluation {
-            margin-bottom: 0;
-        }
-
-        h1, h2, h3 {
-            color: var(--text-primary);
-            font-weight: 700;
-            margin-bottom: 20px;
+            padding: 100px 5%;
+            margin-bottom: 60px; /* Consistent gap between sections */
+            overflow: visible;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
         }
 
-        /* --- Header / Hero Section --- */
+        /* --- Animation Preparation Classes (CORE LOGIC) --- */
+        [data-animate], h2[data-animate] {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease cubic-bezier(0.68, -0.55, 0.265, 1.55), transform 0.8s ease cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        /* This class is added by JavaScript when the element enters view */
+        [data-animate].is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h2 {
+             /* Headers are treated as data-animate by JS to ensure they animate correctly */
+        }
+
+
+        /* --- Hero Section (Kept simpler CSS animations for dramatic start) --- */
         #hero {
-            background-color: var(--bg-color);
             padding: 150px 0;
             text-align: center;
-            border-bottom: 3px solid rgba(25, 118, 210, 0.2);
+            border-bottom: 3px solid rgba(45, 216, 238, 0.2); /* Teal accent border */
         }
         #hero h1 {
             font-size: 3.5em;
             margin-bottom: 10px;
-            color: #90caf9; /* Lighter blue for emphasis */
-        }
-        #hero p {
+            color: #90caf9; 
+             opacity: 0;
+             animation: fadeInSlideUp 1s ease forwards;
+             animation-delay: 0s;
+         }
+        #hero h2 {
             font-size: 1.4em;
             max-width: 700px;
             margin: 20px auto 30px;
-            opacity: 0.85;
+            opacity: 0;
+            animation: fadeInSlideUp 1s ease forwards;
+            animation-delay: 0.2s;
         }
-        .cta-button {
-            display: inline-block;
-            padding: 12px 30px;
-            background-color: var(--accent-color);
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            transition: background-color 0.3s ease, transform 0.2s;
-            box-shadow: 0 4px 15px rgba(25, 118, 212, 0.4);
-        }
-        .cta-button:hover {
-            background-color: #1565c0;
-            transform: translateY(-2px);
-        }
+        #hero p {
+             opacity: 0;
+             animation: fadeInSlideUp 1s ease forwards;
+             animation-delay: 0.4s;
+         }
 
-        /* --- Card Grid System (Used for Features/Pros/Cons) --- */
+        /* --- Card Grid System --- */
         .card-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -95,120 +97,134 @@
             background-color: var(--card-bg);
             padding: 30px;
             border-radius: 8px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            /* Transition for smooth hover effects */
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-left-width 0.3s;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             border-left: 4px solid var(--accent-color);
         }
-        .card h3 {
-            margin-top: 0;
-            font-size: 1.3em;
-            color: var(--text-primary);
+
+        /* INTERACTION EFFECTS (HOVER) */
+        .card:hover {
+            transform: translateY(-5px); /* Lifts the card slightly */
+            box-shadow: 0 10px 30px rgba(45, 216, 238, 0.3); /* Teal hover glow */
         }
 
-        /* --- Specific Section Styling (Pros/Cons) --- */
-        #strengths .card, #weaknesses .card {
-             border-left-width: 8px; /* Thicker line for contrast */
-             padding: 25px;
-        }
-        #strengths .card {
-            background-color: var(--card-bg);
-            border-left-color: var(--secondary-accent);
-        }
-        #weaknesses .card {
-            background-color: var(--card-bg);
-            border-left-color: var(--warning-color);
-        }
+        /* Specific section styling (uses new accent colors) */
+        #strengths .card { border-left-color: var(--secondary-accent); }
+        #weaknesses .card { border-left-color: var(--warning-color); }
+
 
         /* --- Code Block Styling --- */
         pre {
-            background-color: #0d1117; /* Near black for code */
+            background-color: #0d1117; 
             padding: 20px;
             border-radius: 8px;
             overflow-x: auto;
             font-family: 'Consolas', monospace;
             border: 1px solid #333;
         }
-        code {
-            color: #9cdcfe; /* Light blue for code text */
+        pre:hover {
+             box-shadow: 0 0 15px rgba(45, 216, 238, 0.3); /* Teal hover glow */
         }
 
-        /* --- Footer --- */
-        footer {
-            background-color: var(--card-bg);
-            text-align: center;
-            padding: 40px 20px;
-            margin-top: 50px;
-            border-top: 1px solid #333;
+        /* --- CTA Button Styling (Uses primary accent) --- */
+        .cta-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: var(--accent-color);
+            color: var(--bg-color); /* Dark text on bright button */
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s;
+            box-shadow: 0 4px 15px rgba(45, 216, 238, 0.4);
         }
+        .cta-button:hover {
+            background-color: #20b9cc; /* Slightly darker teal on hover */
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(45, 216, 238, 0.5);
+        }
+
+        /* ========================= KEYFRAME ANIMATIONS ========================= */
+
+        @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
     </style>
 </head>
 
-<body>
+<body class="animated">
 
     <!-- ========================= HERO SECTION ========================= -->
     <section id="hero">
         <div class="container">
-            <h1>💻 Ollama</h1>
-            <h2>The Simple Way to Run LLMs Locally</h2>
-            <p>A powerful framework that allows developers and enthusiasts to download, run, and customize open-source Large Language Models (LLMs) directly on their personal computer hardware.</p>
+            <h1 data-animate>💻 Ollama</h1>
+            <h2 data-animate>The Simple Way to Run LLMs Locally</h2>
+            <p data-animate>A powerful framework that allows developers and enthusiasts to download, run, and customize open-source Large Language Models (LLMs) directly on their personal computer hardware.</p>
             <a href="#how-it-works" class="cta-button">Get Started Now</a>
         </div>
     </section>
 
     <!-- ========================= WHAT IS OLLAMA? SECTION ========================= -->
-    <section id="what-is" style="padding: 80px 5%; last: none;">
-        <div class="container">
-            <h2>💡 What Exactly is Ollama?</h2>
-            <p style="font-size: 1.2em; max-width: 900px;">Ollama solves a major problem in the AI space: setup complexity and dependence on cloud APIs. Instead of having to manage Docker containers, complex dependency environments, or expensive API calls for every model (Mistral, Llama, Gemma, etc.), Ollama provides a single, unified command-line interface.</p>
-            <div style="margin-top: 40px; text-align: center;">
-                <img src="https://via.placeholder.com/800x300?text=Simple+Workflow:+Command+Line+%3C--%3E+%26+Run" alt="Ollama Workflow Diagram Placeholder" style="max-width: 100%; border-radius: 10px; opacity: 0.7;">
-            </div>
+    <section id="what-is" class="container" data-animate>
+        <h2 data-animate>💡 What Exactly is Ollama?</h2>
+        <p style="font-size: 1.2em; max-width: 900px;">Ollama solves a major problem in the AI space: setup complexity and dependence on cloud APIs. Instead of having to manage Docker containers, complex dependency environments, or expensive API calls for every model (Mistral, Llama, Gemma, etc.), Ollama provides a single, unified command-line interface.</p>
+        <div style="margin-top: 40px; text-align: center;">
+            <!-- Picsum placeholder added -->
+            <img src="https://picsum.photos/seed/ollama_workflow/800/300" alt="Ollama Workflow Diagram Placeholder" class="data-animate" data-animate>
         </div>
     </section>
 
     <!-- ========================= CORE FEATURES SECTION ========================= -->
-    <section id="features" class="container">
-        <h2 style="text-align: center;">🚀 Key Features & Capabilities</h2>
+    <section id="features" class="container" data-animate>
+        <h2 data-animate>🚀 Key Features & Capabilities</h2>
         <div class="card-grid">
-            
-            <div class="card">
-                <h3>⚡ Local Inference</h3>
-                <p>Run models entirely on your machine. This guarantees privacy, eliminating the need to send sensitive data to third-party servers.</p>
+            <div class="card data-animate">
+                <h3 data-animate>⚡ Local Inference</h3 >
+                <p data-animate>Run models entirely on your machine. This guarantees privacy, eliminating the need to send sensitive data to third-party servers.</p>
             </div>
 
-            <div class="card">
-                <h3>🌐 Cross-Platform Compatibility</h3>
-                <p>Works smoothly across macOS, Linux, and Windows. Consistency means you can develop anywhere without changing your setup.</p>
+            <div class="card data-animate">
+                <h3 data-animate>🌐 Cross-Platform Compatibility</h3 >
+                <p data-animate>Works smoothly across macOS, Linux, and Windows. Consistency means you can develop anywhere without changing your setup.</p>
             </div>
 
-            <div class="card">
-                <h3>🔧 Simple API Access</h3>
-                <p>Exposes a clean RESTful API endpoint, making it trivial to integrate the power of open-source LLMs into your own applications (Python, JavaScript, etc.).</p>
+            <div class="card data-animate">
+                <h3 data-animate>🔧 Simple API Access</h3 >
+                <p data-animate>Exposes a clean RESTful API endpoint, making it trivial to integrate the power of open-source LLMs into your own applications (Python, JavaScript, etc.).</p>
             </div>
             
-             <div class="card">
-                <h3>📚 Extensive Model Zoo</h3>
-                <p>Access hundreds of state-of-the-art, open-weight models. From Mistral to Llama 3, the best models are easily available in one place.</p>
+             <div class="card data-animate">
+                <h3 data-animate>📚 Extensive Model Zoo</h3 >
+                <p data-animate>Access hundreds of state-of-the-art, open-weight models. From Mistral to Llama 3, the best models are easily available in one place.</p>
             </div>
 
         </div>
     </section>
     
     <!-- ========================= HOW TO USE (THE CODE) SECTION ========================= -->
-    <section id="how-it-works" class="container">
-        <h2>⚙️ How It Works: The Magic of the CLI</h2>
+    <section id="how-it-works" class="container" data-animate>
+        <h2 data-animate>⚙️ How It Works: The Magic of the CLI</h2>
         <p style="margin-bottom: 30px;">The entire process is handled through simple command-line instructions, dramatically lowering the barrier to entry for complex AI tooling.</p>
 
-        <h3>Step 1: Installation</h3>
-        <p>Download and run the appropriate binary for your operating system. This sets up the core engine.</p>
+        <h3 class="data-animate" style="color: var(--accent-color);">Step 1: Installation</h3 >
+        <p data-animate>Download and run the appropriate binary for your operating system. This sets up the core engine.</p>
         
-        <h3>Step 2: Downloading a Model (The Zoo)</h3>
-        <p>You don't download huge weights files; Ollama handles the optimized format and storage:</p>
-        <pre><code>ollama run llama3</code></pre>
+        <h3 class="data-animate">Step 2: Downloading a Model (The Zoo)</h3 >
+        <p data-animate>You don't download huge weights files; Ollama handles the optimized format and storage:</p>
+        <pre><code class="data-animate">ollama run llama3</code></pre>
 
-        <h3>Step 3: Interaction & API Use</h3>
-        <p>Once downloaded, you can chat directly, or connect to the local API endpoint (usually `http://localhost:11434`).</p>
-        <pre><code># Example Python call using the built-in client
+        <h3 class="data-animate">Step 3: Interaction & API Use</h3 >
+        <p data-animate>Once downloaded, you can chat directly, or connect to the local API endpoint (usually http://localhost:11434).</p>
+        <pre><code class="data-animate"># Example Python call using the built-in client
 import ollama
 response = ollama.chat('llama3', messages=[{'role': 'user', 'content': 'Explain quantum physics simply.'}])
 
@@ -217,41 +233,41 @@ print(response['message']['content'])</code></pre>
 
 
     <!-- ========================= STRENGTHS & WEAKNESSES SECTION ========================= -->
-    <section id="evaluation" class="container">
-        <h2>⚖️ The Verdict: Strengths and Limitations</h2>
+    <section id="evaluation" class="container" data-animate>
+        <h2 data-animate>⚖️ The Verdict: Strengths and Limitations</h2>
         <p style="text-align: center; margin-bottom: 40px;">No tool is perfect. Understanding these trade-offs helps you choose the right time to use Ollama.</p>
 
         <!-- STRENGTHS -->
-        <h3>✅ Strengths (Pros)</h3>
-        <div class="card-grid" id="strengths">
-            <div class="card">
-                <h3>🔒 Privacy & Security Focus</h3>
-                <p>All inference runs locally. Your data never leaves your device, making it ideal for handling confidential or sensitive information.</p>
+        <h3 class="data-animate" style="color: var(--secondary-accent);">✅ Strengths (Pros)</h3 >
+        <div class="card-grid">
+            <div class="card data-animate">
+                <h3 data-animate>🔒 Privacy & Security Focus</h3 >
+                <p data-animate>All inference runs locally. Your data never leaves your device, making it ideal for handling confidential or sensitive information.</p>
             </div>
-            <div class="card">
-                <h3>💸 Cost Predictability</h3>
-                <p>Zero operational costs (aside from electricity). You don't pay per API call to a cloud provider, making large-scale testing affordable.</p>
+            <div class="card data-animate">
+                <h3 data-animate>💸 Cost Predictability</h3 >
+                <p data-animate>Zero operational costs (aside from electricity). You don't pay per API call to a cloud provider, making large-scale testing affordable.</p>
             </div>
-            <div class="card">
-                <h3>💻 Full Control & Customization</h3>
-                <p>Allows fine-tuning and running esoteric or experimental models that might not be available through commercial APIs.</p>
+            <div class="card data-animate">
+                <h3 data-animate>💻 Full Control & Customization</h3 >
+                <p data-animate>Allows fine-tuning and running esoteric or experimental models that might not be available through commercial APIs.</p>
             </div>
         </div>
 
         <!-- WEAKNESSES -->
-        <h3 style="margin-top: 80px;">❌ Weaknesses (Cons)</h3>
-        <div class="card-grid" id="weaknesses">
-            <div class="card">
-                <h3>🐌 Hardware Dependence</h3>
-                <p>Performance is strictly limited by your CPU/GPU VRAM. Powerful models require beefy hardware to run efficiently.</p>
+        <h3 class="data-animate" style="margin-top: 80px; color: var(--warning-color);">❌ Weaknesses (Cons)</h3 >
+        <div class="card-grid">
+             <div class="card data-animate">
+                <h3 data-animate>🐌 Hardware Dependence</h3 >
+                <p data-animate>Performance is strictly limited by your CPU/GPU VRAM. Powerful models require beefy hardware to run efficiently.</p>
             </div>
-            <div class="card">
-                <h3>⚙️ Initial Setup Overhead</h3>
-                <p>Requires comfort with the command line (CLI). While simplified, a non-technical user may find initial setup confusing compared to a web UI.</p>
+            <div class="card data-animate">
+                <h3 data-animate>⚙️ Initial Setup Overhead</h3 >
+                <p data-animate>Requires comfort with the command line (CLI). While simplified, a non-technical user may find initial setup confusing compared to a web UI.</p>
             </div>
-             <div class="card">
-                <h3>📉 Model Optimization</h3>
-                <p>Some highly optimized, massive models might perform better or be easier to integrate via dedicated proprietary frameworks (e.g., OpenAI's specific API). Ollama is excellent but not universal.</p>
+             <div class="card data-animate">
+                <h3 data-animate>📉 Model Optimization</h3 >
+                <p data-animate>Some highly optimized, massive models might perform better or be easier to integrate via dedicated proprietary frameworks. Ollama is excellent but not universal.</p>
             </div>
         </div>
 
@@ -259,12 +275,93 @@ print(response['message']['content'])</code></pre>
 
 
     <!-- ========================= FOOTER ========================= -->
-    <footer>
+    <footer data-animate>
         <p>&copy; 2024 The LLM Guide Project. Built for knowledge sharing on Local AI Inference.</p>
         <div style="margin-top: 10px;">
-            <a href="#" style="color:#aaa; margin: 0 15px; text-decoration: none;">[Ollama Docs]</a> | <a href="#" style="color:#aaa; margin: 0 15px; text-decoration: none;">[Community Forum]</a>
+            <a href="#" style="color:#aaa; margin: 0 15px; text-decoration: none;" data-animate>[Ollama Docs]</a> | <a href="#" style="color:#aaa; margin: 0 15px; text-decoration: none;" data-animate/>[Community Forum]</a>
         </div>
     </footer>
 
+<script>
+    // JavaScript for Animation Logic using IntersectionObserver (Josh Comeau Style)
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const sections = document.querySelectorAll('section');
+        const heroImagePlaceholder = document.querySelector('#what-is img');
+
+        /** 
+         * The Animation Observer Function: This is the core logic that triggers animations safely.
+         */
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                // Check if target exists and has the animation attribute before proceeding
+                if (entry.isIntersecting && entry.target && entry.target.hasAttribute('data-animate')) {
+                    let targetElement = entry.target;
+
+                    // 1. Add the visible class to trigger CSS transitions defined by [data-animate].is-visible
+                    targetElement.classList.add('is-visible'); 
+                    
+                    // If it's a code block, ensure fade in starts after structural animation is complete
+                    if (entry.target.tagName === 'PRE') {
+                        setTimeout(() => {
+                            // This forces the browser to recognize the element and helps trigger CSS transitions.
+                            targetElement.style.opacity = 1; 
+                        }, 50); 
+                    }
+
+                    observer.unobserve(targetElement); // Stop observing once animated
+                }
+            });
+        };
+
+
+        // --- Initialization Logic ---
+        
+        // Check if the browser supports IntersectionObserver API before proceeding
+        if (!('IntersectionObserver' in window)) {
+            console.warn("Browser does not support IntersectionObserver API for scroll animations.");
+            return; // Stop execution if the API isn't available
+        }
+
+        // 1. Create and run the observer with necessary checks
+        try {
+            const observer = new IntersectionObserver(observerCallback, { threshold: 0.15 });
+
+            // Observe only valid sections
+            sections.forEach((section) => {
+            if (section.id !== 'hero') { 
+                observer.observe(section);
+            }
+            });
+
+        } catch (error) {
+            console.error("Error initializing IntersectionObserver:", error);
+        }
+
+
+        // --- Initial Animation Triggers (For elements visible immediately on load) ---
+        revealElement(document.querySelector('#what-is h2'));
+
+        // 2. Handle the hero image placeholder fade-in specifically
+        if (heroImagePlaceholder) {
+            setTimeout(() => {
+                heroImagePlaceholder.style.opacity = 1; 
+            }, 300); 
+        }
+    });
+
+
+    /**
+     * Helper function to safely add the visible class and prevent runtime errors.
+     */
+    function revealElement(element) {
+        // STRONGER CHECK: Ensure element is a non-null object AND has the required property (classList).
+        if (typeof element === 'object' && element !== null && typeof element.classList === 'function') {
+            element.classList.add('is-visible');
+        } else {
+            // Removed console.error to prevent cluttering output, but keep it for debugging if needed.
+        }
+    }
+</script>
 </body>
 </html>
