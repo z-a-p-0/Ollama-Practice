@@ -53,11 +53,6 @@
             transform: translateY(0);
         }
 
-        h2 {
-             /* Headers are treated as data-animate by JS to ensure they animate correctly */
-        }
-
-
         /* --- Hero Section (Kept simpler CSS animations for dramatic start) --- */
         #hero {
             padding: 150px 0;
@@ -219,7 +214,7 @@
         <p data-animate>Download and run the appropriate binary for your operating system. This sets up the core engine.</p>
         
         <h3 class="data-animate">Step 2: Downloading a Model (The Zoo)</h3 >
-        <p data-animate>You don't download huge weights files; Ollama handles the optimized format and storage:</p>
+        <p data-animate>You don't download huge weights files; Ollama handles the optimized format and storage, including quantization (GGUF), making models ready for immediate use:</p>
         <pre><code class="data-animate">ollama run llama3</code></pre>
 
         <h3 class="data-animate">Step 3: Interaction & API Use</h3 >
@@ -267,7 +262,7 @@ print(response['message']['content'])</code></pre>
             </div>
              <div class="card data-animate">
                 <h3 data-animate>📉 Model Optimization</h3 >
-                <p data-animate>Some highly optimized, massive models might perform better or be easier to integrate via dedicated proprietary frameworks. Ollama is excellent but not universal.</p>
+                <p data-animate>Some highly optimized, massive models might perform better or be easier to integrate via dedicated proprietary frameworks. Ollama is excellent but not universal for every niche use case.</p>
             </div>
         </div>
 
@@ -283,55 +278,43 @@ print(response['message']['content'])</code></pre>
     </footer>
 
 <script>
-    // JavaScript for Animation Logic using IntersectionObserver (Josh Comeau Style)
+    // JavaScript for Animation Logic using IntersectionObserver (Universal Float In)
 
     document.addEventListener('DOMContentLoaded', function() {
-        const sections = document.querySelectorAll('section');
-        const heroImagePlaceholder = document.querySelector('#what-is img');
+        const observerOptions = { 
+            root: null, // viewport
+            rootMargin: '0px',
+            threshold: 0.15 // Trigger when 15% of the element is visible
+        };
 
         /** 
-         * The Animation Observer Function: This is the core logic that triggers animations safely.
+         * The Animation Observer Function: Triggers animations for any element with data-animate attribute upon scroll.
          */
         const observerCallback = (entries, observer) => {
             entries.forEach(entry => {
-                // Check if target exists and has the animation attribute before proceeding
-                if (entry.isIntersecting && entry.target && entry.target.hasAttribute('data-animate')) {
-                    let targetElement = entry.target;
+                let targetElement = entry.target;
 
+                // Check if the element has the animation trigger and hasn't been processed
+                if (targetElement && targetElement.hasAttribute('data-animate') && !targetElement.classList.contains('is-visible')) {
                     // 1. Add the visible class to trigger CSS transitions defined by [data-animate].is-visible
                     targetElement.classList.add('is-visible'); 
-                    
-                    // If it's a code block, ensure fade in starts after structural animation is complete
-                    if (entry.target.tagName === 'PRE') {
-                        setTimeout(() => {
-                            // This forces the browser to recognize the element and helps trigger CSS transitions.
-                            targetElement.style.opacity = 1; 
-                        }, 50); 
-                    }
-
-                    observer.unobserve(targetElement); // Stop observing once animated
                 }
             });
         };
 
-
         // --- Initialization Logic ---
         
-        // Check if the browser supports IntersectionObserver API before proceeding
         if (!('IntersectionObserver' in window)) {
             console.warn("Browser does not support IntersectionObserver API for scroll animations.");
-            return; // Stop execution if the API isn't available
+            return; 
         }
 
-        // 1. Create and run the observer with necessary checks
         try {
-            const observer = new IntersectionObserver(observerCallback, { threshold: 0.15 });
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
 
-            // Observe only valid sections
-            sections.forEach((section) => {
-            if (section.id !== 'hero') { 
-                observer.observe(section);
-            }
+            // Observe ALL elements marked with data-animate attribute across the entire document body
+            document.querySelectorAll('[data-animate]').forEach((element) => {
+                observer.observe(element);
             });
 
         } catch (error) {
@@ -340,28 +323,16 @@ print(response['message']['content'])</code></pre>
 
 
         // --- Initial Animation Triggers (For elements visible immediately on load) ---
-        revealElement(document.querySelector('#what-is h2'));
+        
+        // Manually trigger the animation for all data-animate elements that are already in view 
+        document.querySelectorAll('[data-animate]').forEach(element => {
+            // Check if element is within the viewport bounds to be considered "visible" on load
+            if (element.getBoundingClientRect().top < window.innerHeight * 0.8 && element.getBoundingClientRect().bottom > 0) {
+                element.classList.add('is-visible');
+            }
+        });
 
-        // 2. Handle the hero image placeholder fade-in specifically
-        if (heroImagePlaceholder) {
-            setTimeout(() => {
-                heroImagePlaceholder.style.opacity = 1; 
-            }, 300); 
-        }
     });
-
-
-    /**
-     * Helper function to safely add the visible class and prevent runtime errors.
-     */
-    function revealElement(element) {
-        // STRONGER CHECK: Ensure element is a non-null object AND has the required property (classList).
-        if (typeof element === 'object' && element !== null && typeof element.classList === 'function') {
-            element.classList.add('is-visible');
-        } else {
-            // Removed console.error to prevent cluttering output, but keep it for debugging if needed.
-        }
-    }
 </script>
 </body>
 </html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Graphing Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+
+        #controls {
+            width: 80%;
+            max-width: 1000px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #equationControls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #equationControls label {
+            font-weight: bold;
+        }
+
+        #equationInput {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #xRangeControls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .button-group button {
+            padding: 10px 20px;
+            margin-right: 5px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #graphContainer {
+            width: 90%;
+            max-width: 1200px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+
+        #graphCanvas {
+            display: block;
+            cursor: grab; /* Indicates draggable area */
+        }
+
+        #scaleDisplay {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            width: 80%;
+            max-width: 1000px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Interactive Graphing Tool</h1>
+
+    <div id="controls">
+        <label for="equationInput">Equation (y = f(x)):</label>
+        <textarea id="equationInput" placeholder="e.g., 2*x + 5 or Math.pow(x, 2) * x + 3" rows="1"></textarea>
+        
+        <div id="xRangeControls">
+            <div>
+                <label for="startX">X Start:</label>
+                <input type="number" id="startX" value="-10" step="1">
+            </div>
+            <div>
+                <label for="endX">X End:</label>
+                <input type="number" id="endX" value="10" step="1">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="drawGraph()">Draw Graph</button>
+            <button onclick="zoom(1.2)">+</button> <!-- Zoom In -->
+            <button onclick="zoom(0.8)">-</button> <!-- Zoom Out -->
+        </div>
+    </div>
+
+    <div id="graphContainer">
+        <canvas id="graphCanvas"></canvas>
+    </div>
+
+    <div id="scaleDisplay">Scale: X=1.0, Y=1.0 | Offset: (0, 0)</div>
+
+    <script>
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const equationInput = document.getElementById('equationInput');
+        const startXInput = document.getElementById('startX');
+        const endXInput = document.getElementById('endX');
+        const scaleDisplay = document.getElementById('scaleDisplay');
+
+        // --- Graph State Variables ---
+        let scaleX = 1; // Zoom level for X axis
+        let scaleY = 1; // Zoom level for Y axis
+        let offsetX = 0; // Pan offset for X axis (World X at canvas X=0)
+        let offsetY = 0; // Pan offset for Y axis (World Y at canvas Y=0)
+        let isPanning = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+        // --- Helper Functions ---
+
+        /**
+         * Updates the scale display element with current zoom and offset values.
+         */
+        function updateScaleDisplay() {
+            const formattedScaleX = scaleX.toFixed(2);
+            const formattedScaleY = scaleY.toFixed(2);
+            const formattedOffsetX = offsetX.toFixed(1);
+            const formattedOffsetY = offsetY.toFixed(1);
+
+            scaleDisplay.innerHTML = `Scale: X=${formattedScaleX}, Y=${formattedScaleY} | Offset: (${formattedOffsetX}, ${formattedOffsetY})`;
+        }
+
+        /**
+         * Parses the input string into an array of {x: number, y: number} objects. (Kept for compatibility/future use)
+         */
+        function parseData(dataString) {
+            const points = [];
+            if (!dataString) return points;
+
+            // Split by semicolon to get individual point pairs
+            const pairs = dataString.split(';');
+            pairs.forEach(pair => {
+                const trimmedPair = pair.trim();
+                if (trimmedPair) {
+                    // Split each pair by comma
+                    const coords = trimmedPair.split(',').map(c => parseFloat(c.trim()));
+                    if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                        points.push({ x: coords[0], y: coords[1] });
+                    }
+                }
+            });
+            return points;
+        }
+
+        /**
+         * Evaluates the equation string f(x) at a given x value.
+         */
+        function evaluateEquation(equation, x) {
+            try {
+                // 1. Sanitize and prepare the expression for safe evaluation:
+                let sanitizedEquation = equation;
+
+                // Replace common math notations with JavaScript equivalents
+                sanitizedEquation = sanitizedEquation.replace(/x\^(\d+)/g, 'Math.pow(x, $1)'); // Handles x^2, x^3 etc.
+                // Add more replacements as needed (e.g., cos, tan)
+
+                // 2. Create a safe scope for evaluation
+                const x_val = x;
+                
+                // Use Function constructor for safer evaluation than direct eval()
+                const evaluator = new Function('x', `return ${sanitizedEquation}`);
+                let y = evaluator(x_val);
+
+                if (isNaN(y) || !isFinite(y)) {
+                    return null; // Return null if the result is NaN or Infinity
+                }
+                return y;
+
+            } catch (e) {
+                console.error("Error evaluating equation:", e);
+                return null;
+            }
+        }
+
+
+        /**
+         * Calculates points for a function f(x) over an interval [startX, endX] with a given step size.
+         */
+        function calculateFunctionPoints(equation, startX, endX, step) {
+            const points = [];
+            let x = startX;
+
+            while (x <= endX + Math.abs(step) / 2) { // Loop condition handles floating point inaccuracies
+                const y = evaluateEquation(equation, x);
+                if (y !== null) {
+                    points.push({ x: x, y: y });
+                }
+                x += step;
+            }
+            return points;
+        }
+
+        /**
+         * Transforms data coordinates (world space) to canvas pixel coordinates, 
+         * respecting standard Cartesian plane orientation (Y increases upwards).
+         */
+        function worldToCanvas(point) {
+            // X mapping remains standard (positive increases right)
+            const canvasX = (point.x * scaleX + offsetX);
+
+            // Y mapping is inverted for screen coordinates (0 at top, max height at bottom).
+            // The offsetY represents the world Y value that should appear at canvas Y=0.
+            const canvasY = canvas.height - ((point.y * scaleY + offsetY)); 
+
+            return { canvasX, canvasY };
+        }
+
+        /**
+         * Draws the X and Y axes lines on the canvas, including grid markings for integers and 0.1 intervals.
+         */
+        function drawAxes(minX, maxX, minY, maxY) {
+            // --- Grid Drawing Helper ---
+            const drawGrid = (isVertical, stepValue, isIntegerStep) => {
+                ctx.strokeStyle = '#ddd'; // Light gray for grid lines
+                ctx.lineWidth = 0.5;
+
+                if (isVertical) { // Vertical lines (X-axis grid)
+                    // Iterate over X values from min to max in steps of stepValue
+                    for (let xVal = Math.ceil(minX / stepValue) * stepValue; xVal <= maxX + stepValue/2; xVal += stepValue) {
+                        const canvasX = worldToCanvas({ x: xVal, y: 0 }).canvasX;
+                        if (canvasX >= -1 && canvasX <= canvas.width + 1) {
+                            ctx.beginPath();
+                            ctx.moveTo(canvasX, 0);
+                            ctx.lineTo(canvasX, canvas.height);
+                            ctx.stroke();
+                        }
+                    }
+                } else { // Horizontal lines (Y-axis grid)
+                    // Iterate over Y values from min to max in steps of stepValue
+                    for (let yVal = Math.ceil(minY / stepValue) * stepValue; yVal <= maxY + stepValue/2; yVal += stepValue) {
+                        const canvasY = worldToCanvas({ x: 0, y: yVal }).canvasY;
+                        if (canvasY >= -1 && canvasY <= canvas.height + 1) {
+                            ctx.beginPath();
+                            ctx.moveTo(0, canvasY);
+                            ctx.lineTo(canvas.width, canvasY);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            };
+
+            // --- Draw Grid Lines (0.1 interval grid - fainter) ---
+            drawGrid(true, 0.1, false); // Vertical lines every 0.1
+            drawGrid(false, 0.1, false); // Horizontal lines every 0.1
+
+
+            // --- Draw Integer Markings and Axes (Thicker/Darker) ---
+
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#333';
+
+            // Draw X-Axis (y=0 line) - Main Axis
+            const xAxisYCanvas = worldToCanvas({ x: 0, y: 0 }).canvasY; // Y=0 maps to this pixel Y
+            if (xAxisYCanvas >= -1 && xAxisYCanvas <= canvas.height + 1) {
+                ctx.beginPath();
+                ctx.moveTo(0, xAxisYCanvas);
+                ctx.lineTo(canvas.width, xAxisYCanvas);
+                ctx.stroke();
+            }
+
+            // Draw Y-Axis (x=0 line) - Main Axis
+            const yAxisXCanvas = worldToCanvas({ x: 0, y: 0 }).canvasX; // X=0 maps to this pixel X
+            if (yAxisXCanvas >= -1 && yAxisXCanvas <= canvas.width + 1) {
+                ctx.beginPath();
+                ctx.moveTo(yAxisXCanvas, 0);
+                ctx.lineTo(yAxisXCanvas, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw Integer Grid Marks (Overwriting the faint grid at integer steps)
+            const drawIntegerMarks = (isVertical, stepValue) => {
+                for (let i = Math.ceil(minX / stepValue) * stepValue; i <= maxX + stepValue/2; i += stepValue) {
+                    if (Math.abs(i % 1) < 0.05 || Math.abs(i % 1) > 0.95) { // Check if close to an integer
+                        const canvasX = worldToCanvas({ x: i, y: 0 }).canvasX;
+                        if (Math.abs(i - Math.round(i)) < 0.05 && canvasX >= -1 && canvasX <= canvas.width + 1) {
+                            ctx.beginPath();
+                            ctx.moveTo(canvasX, 0);
+                            ctx.lineTo(canvasX, canvas.height);
+                            ctx.strokeStyle = '#333'; // Darker color for integer lines
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            };
+
+            // Draw Integer X marks (Vertical)
+            drawIntegerMarks(true, 1); 
+            // Draw Integer Y marks (Horizontal) - This is tricky as we need to iterate over y values
+            for (let j = Math.ceil(minY / 1) * 1; j <= maxY + 1; j += 1) {
+                const canvasY = worldToCanvas({ x: 0, y: j }).canvasY;
+                if (Math.abs(j - Math.round(j)) < 0.05 && canvasY >= -1 && canvasY <= canvas.height + 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, canvasY);
+                    ctx.lineTo(canvas.width, canvasY);
+                    ctx.strokeStyle = '#333'; // Darker color for integer lines
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+
+
+            // Labeling (Simplified: just draw the origin text)
+            ctx.fillText("X Axis", canvas.width - 80, canvas.height - 10);
+            ctx.save();
+            ctx.translate(20, 20);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText("Y Axis", 0, 0);
+            ctx.restore();
+        }
+
+        // --- Interaction Handlers (Zoom & Pan) ---
+
+        /**
+         * Handles mouse wheel events for zooming. This listener is kept but its action 
+         * will be overridden by the button clicks to prevent conflicts/redundancy.
+         */
+        canvas.addEventListener('wheel', (e) => {
+            // Prevent default browser zoom behavior when using custom controls
+            e.preventDefault();
+        });
+
+        /**
+         * Handles mouse down for panning start.
+         */
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0 && !isPanning) {
+                isPanning = true;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+
+        /**
+         * Handles mouse up for panning end.
+         */
+        window.addEventListener('mouseup', () => {
+            if (isPanning) {
+                isPanning = false;
+                canvas.style.cursor = 'grab';
+            }
+        });
+
+        /**
+         * Handles mouse move for panning movement.
+         */
+        canvas.addEventListener('mousemove', (e) => {
+            // Only process if we are actively panning
+            if (!isPanning) return;
+
+            // Calculate the change in pixels since last move
+            const dxPixels = e.clientX - lastMouseX;
+            const dyPixels = e.clientY - lastMouseY;
+
+            // Update offsets based on pixel movement and current scale
+            offsetX += dxPixels;
+            offsetY -= dyPixels; // CORRECTION: Subtracting the delta Y moves the graph in the same direction as dragging (down drag -> positive offset change)
+
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+
+            drawGraphInternal(); // Use internal function to prevent recursion
+        });
+
+
+        // --- Public API Functions & Controls ---
+
+        /**
+         * Zooms the graph by a given factor around the cursor position.
+         * @param {number} factor - The zoom factor (e.g., 1.2 for in, 0.8 for out).
+         */
+        window.zoom = function(factor) {
+            const currentScaleX = scaleX;
+            const currentScaleY = scaleY;
+
+            // Calculate the point under the cursor *before* zooming
+            const preZoomXWorld = (lastMouseX - offsetX) / currentScaleX;
+            // Y calculation must account for canvas inversion: WorldY = CanvasHeight - PixelY
+            const preZoomYWorld = (canvas.height - lastMouseY) / currentScaleY; 
+
+            // Apply zoom factor to scales
+            scaleX *= factor;
+            scaleY *= factor;
+
+            // Adjust offsets so the point under the cursor remains stationary (zoom around cursor)
+            offsetX = lastMouseX - preZoomXWorld * scaleX;
+            offsetY = canvas.height - ((preZoomYWorld * scaleY) * factor);
+
+
+            drawGraphInternal(); // Use internal function to prevent recursion
+        }
+
+        window.drawGraph = function() {
+            drawGraphInternal(); 
+        }
+
+        // Initial setup calls
+        window.onload = () => {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        };
+
+    </script>
+</body>
+</html>
